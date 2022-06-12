@@ -7,9 +7,14 @@ class CustomSlider extends StatefulWidget {
   final Function(double value) getSliderValue;
   final String title;
   final Color curColor;
+  final double initData;
 
   const CustomSlider(
-      {Key? key, required this.title, required this.getSliderValue,required this.curColor})
+      {Key? key,
+      required this.title,
+      required this.getSliderValue,
+      required this.curColor,
+      required this.initData})
       : super(key: key);
 
   @override
@@ -35,11 +40,12 @@ class _CustomSliderState extends State<CustomSlider> {
 
   Widget sliderTitle() {
     return Container(
-      width: 180,
+      width: 200,
       child: ListTile(
         leading: Container(
           padding: EdgeInsets.only(right: 5),
-          decoration: BoxDecoration(shape: BoxShape.circle, color: widget.curColor),
+          decoration:
+              BoxDecoration(shape: BoxShape.circle, color: widget.curColor),
           width: 15,
           height: 15,
         ),
@@ -47,30 +53,20 @@ class _CustomSliderState extends State<CustomSlider> {
           widget.title,
           style: TextStyle(fontSize: 17),
         ),
+//        trailing: Text(
+//          '${_cnt}',
+//          style: TextStyle(fontSize: 17),
+//        ),
       ),
     );
   }
 
   Widget sliderKeyPart() {
-    return CupertinoSlider(
-      min: 0,
-      max: 10,
-      divisions: 20,
-      onChangeEnd: (value) {
-        print(value);
-        setState(() {
-          _cnt = value;
-//                  print(_cnt);
-//          widget.getSliderValue(value);
-        });
-      },
-      onChanged: (double value) {
-        setState(() {
+    return CustomSliderKeyPart(
+        initData: widget.initData,
+        onChangeEnd: (value) {
           _cnt = value;
         });
-      },
-      value: _cnt,
-    );
   }
 
   Widget sliderConfirmBtn() {
@@ -89,6 +85,49 @@ class _CustomSliderState extends State<CustomSlider> {
           style: TextStyle(fontSize: 20, color: Colors.white),
         ),
       ),
+    );
+  }
+}
+
+class CustomSliderKeyPart extends StatefulWidget {
+  final double initData;
+  final Function(double sliderValue) onChangeEnd;
+  bool _isFirstShown = true;
+
+  CustomSliderKeyPart({required this.initData, required this.onChangeEnd});
+
+  @override
+  _CustomSliderKeyPartState createState() => _CustomSliderKeyPartState();
+}
+
+class _CustomSliderKeyPartState extends State<CustomSliderKeyPart> {
+  double _cnt = 1.0;
+
+  @override
+  Widget build(BuildContext context) {
+    if (widget._isFirstShown) {
+      _cnt = widget.initData;
+    }
+    return CupertinoSlider(
+      min: 0,
+      max: 10,
+      divisions: 20,
+      onChangeEnd: (value) {
+        print(value);
+        setState(() {
+          _cnt = value;
+//                  print(_cnt);
+//          widget.getSliderValue(value);
+        });
+      },
+      onChanged: (double value) {
+        widget._isFirstShown = false;
+        setState(() {
+          _cnt = value;
+        });
+        widget.onChangeEnd(value);
+      },
+      value: _cnt,
     );
   }
 }

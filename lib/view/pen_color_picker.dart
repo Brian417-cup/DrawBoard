@@ -3,10 +3,14 @@ import 'package:flutter_colorpicker/flutter_colorpicker.dart';
 
 class ColorPickerDialog extends StatelessWidget {
   final Function(Color dstColor) onColorChange;
-  Color dstColor=Colors.primaries[0];
+  Color dstColor = Colors.blue;
   final Color initColor;
+//  为了防止没有调整任何操作就关闭对话框啊而导致最后的颜色发生改变的情况
+  bool hasChanged = false;
 
-  ColorPickerDialog({Key? key, required this.onColorChange,required this.initColor}) : super(key: key);
+  ColorPickerDialog(
+      {Key? key, required this.onColorChange, required this.initColor})
+      : super(key: key);
 
   @override
   Widget build(BuildContext context) {
@@ -31,6 +35,7 @@ class ColorPickerDialog extends StatelessWidget {
               ),
               pickerColor: initColor,
               onColorChanged: (curColor) {
+                hasChanged = true;
                 dstColor = curColor;
               },
               colorModel: ColorModel.rgb,
@@ -43,7 +48,9 @@ class ColorPickerDialog extends StatelessWidget {
           Center(
             child: ElevatedButton(
               onPressed: () {
-                onColorChange(dstColor);
+                if (hasChanged) {
+                  onColorChange(dstColor);
+                }
                 Navigator.of(context).pop();
               },
               child: Container(

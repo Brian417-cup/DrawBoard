@@ -30,52 +30,51 @@ class _KeyCustomDrawBoardWidgetState extends State<KeyCustomDrawBoardWidget> {
   }
 
   Widget _drawBoardFunc() {
-    return GestureDetector(onPanDown: (details) {
+    return Consumer<DrawBoardProvider>(builder: (context, cur, child) {
+      return GestureDetector(
+          onPanDown: (details) {
 //      这里因为用了Provider所以不用setstate了
 //      setState(() {
-      isFinished = false;
+            isFinished = false;
 
-      final drawBoardProvider =
-          Provider.of<DrawBoardProvider>(context, listen: false);
-
-      _currentPath = Path();
-      _currentPen = Paint()
-        ..style = PaintingStyle.stroke
-        ..color = drawBoardProvider.isEraser
-            ? drawBoardProvider.eraserColor
-            : drawBoardProvider.nextPenColor
-        ..strokeWidth = drawBoardProvider.nextPenStrideWidth;
+            _currentPath = Path();
+            _currentPen = Paint()
+              ..style = PaintingStyle.stroke
+              ..color = cur.isEraser ? cur.eraserColor : cur.nextPenColor
+              ..strokeWidth = cur.nextPenStrokeWidth;
 //      _currentPathInfo = PathInfo(_currentPath!, _currentPen!);
 //
 ////        最后汇总的线路数据集全部上交到Provider中
 //      drawBoardProvider.pathInfoList.add(_currentPathInfo!);
 
-      drawBoardProvider.addToCurrentLayer(_currentPath!, _currentPen!);
+            cur.addToCurrentLayer(_currentPath!, _currentPen!);
 
-      final dx = details.localPosition.dx;
-      final dy = details.localPosition.dy;
-      _currentPath
-        ?..moveTo(dx, dy)
-        ..lineTo(dx + 1, dy + 1);
+            final dx = details.localPosition.dx;
+            final dy = details.localPosition.dy;
+            _currentPath
+              ?..moveTo(dx, dy)
+              ..lineTo(dx + 1, dy + 1);
 //      });
-    }, onPanUpdate: (details) {
-      final dx = details.localPosition.dx;
-      final dy = details.localPosition.dy;
+          },
+          onPanUpdate: (details) {
+            final dx = details.localPosition.dx;
+            final dy = details.localPosition.dy;
 
-      setState(() {
-        _currentPath?.lineTo(dx, dy);
-      });
-    }, onPanEnd: (details) {
-      isFinished = true;
-      _currentPath = null;
+            setState(() {
+              _currentPath?.lineTo(dx, dy);
+            });
+          },
+          onPanEnd: (details) {
+            isFinished = true;
+            _currentPath = null;
 //      _currentPathInfo = null;
 //        print('当前这条线绘制完成!!');
-    }, child: Consumer<DrawBoardProvider>(builder: (context, cur, child) {
-      return CustomPaint(
-        painter: MyCustomPainter(cur.pathInfoList,
-            lastFrame: (oldFrame) {}, targetLayer: cur.curLayer),
-      );
-    }));
+          },
+          child: CustomPaint(
+            painter: MyCustomPainter(cur.pathInfoList,
+                lastFrame: (oldFrame) {}, targetLayer: cur.curLayerIndex),
+          ));
+    });
   }
 }
 
