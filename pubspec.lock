@@ -81,6 +81,13 @@ packages:
     description: flutter
     source: sdk
     version: "0.0.0"
+  ftoast:
+    dependency: "direct dev"
+    description:
+      name: ftoast
+      url: "https://pub.flutter-io.cn"
+    source: hosted
+    version: "2.0.0"
   lints:
     dependency: transitive
     description:

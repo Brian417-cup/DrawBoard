@@ -1,11 +1,10 @@
 import 'dart:ui';
 
 class PathInfo{
-  int layer;
   Path _data;
   Paint _pen;
 
-  PathInfo(this.layer,this._data, this._pen);
+  PathInfo(this._data, this._pen);
 
   Paint get pen => _pen;
 

@@ -10,7 +10,17 @@ class DrawBoardProvider extends ChangeNotifier {
   double _nextPenStrokeWidth = 1.0;
 
 //  所有的数据
-  List<PathInfo> _pathInfoList = [];
+//  List<PathInfo> _pathInfoList = [];
+  List<List<PathInfo>> _pathInfoList = List.generate(
+      1,
+      (index) => List.generate(
+          1,
+          (index) => PathInfo(
+              Path(),
+              Paint()
+                ..strokeWidth = 1.0
+                ..color = Colors.blue
+                ..style = PaintingStyle.stroke)));
 
   Color get nextPenColor => _nextPenColor;
 
@@ -51,23 +61,17 @@ class DrawBoardProvider extends ChangeNotifier {
   }
 
 //  前进和撤退功能,用下标记录当前的总共要绘画的步数来确定
-  List<PathInfo> get pathInfoList => _pathInfoList;
 
-  set pathInfoList(List<PathInfo> value) {
+  List<List<PathInfo>> get pathInfoList => _pathInfoList;
+
+  set pathInfoList(List<List<PathInfo>> value) {
     _pathInfoList = value;
   }
 
 //      找到当前图层的最后一条线并执行“后退一步”功能
   popLastPathData() {
-    if (_pathInfoList.length != 0) {
-      int curLastIndex = 0;
-      for (int i = 0; i < _pathInfoList.length; i++) {
-        var e = _pathInfoList[i];
-        if (e.layer == _curLayerIndex) {
-          curLastIndex = i;
-        }
-      }
-      _pathInfoList.removeAt(curLastIndex);
+    if (_pathInfoList[_curLayerIndex].length != 0) {
+      _pathInfoList[_curLayerIndex].removeLast();
       notifyListeners();
     }
   }
@@ -92,58 +96,58 @@ class DrawBoardProvider extends ChangeNotifier {
 
   //    把新的路线加入到当前图层中
   addToCurrentLayer(Path curPath, Paint curPaint) {
-    _pathInfoList.add(PathInfo(_curLayerIndex, curPath, curPaint));
+    _pathInfoList[_curLayerIndex].add(PathInfo(curPath, curPaint));
     notifyListeners();
   }
 
   //  判断输入图层下标的准确性
-  bool _isLayerInSuitRange(targetStr) {
+  bool _isLayerInSuitRange(String targetStr) {
     try {
-      int targetIndex = targetStr.toInt();
+      int targetIndex = int.parse(targetStr);
       if (targetIndex >= 0 && targetIndex < _layerCnt) {
         return true;
       }
     } catch (e) {
       return false;
     }
-
     return false;
   }
 
   //  新加一个图层并创建新的画笔到末尾
   addOneNewLayer() {
-    _pathInfoList.add(PathInfo(
-        _layerCnt++,
-        Path(),
-        Paint()
-          ..style = PaintingStyle.stroke
-          ..color = Colors.blue
-          ..strokeWidth = 1.0));
+    _pathInfoList.add(List<PathInfo>.generate(
+        1,
+        (index) => PathInfo(
+            Path(),
+            Paint()
+              ..style = PaintingStyle.stroke
+              ..color = Colors.blue
+              ..strokeWidth = 1.0)));
+
+    _layerCnt++;
 
     notifyListeners();
   }
 
-//  删除最后一个图层
+//  删除图层
   bool delTargetLayer(indexStr) {
 //    只有一个图层的时候不能删
     if (_layerCnt <= 1) {
       return false;
     }
 
+//    在合理的范围才进行图层的删除
     if (_isLayerInSuitRange(indexStr)) {
-      int targetIndex = indexStr.toInt();
+      int targetIndex = int.parse(indexStr);
 //      如果当前删除的图层恰好是用户控制的图层，需要先调整再执行删除操作
       if (_curLayerIndex == targetIndex) {
         _curLayerIndex = 0;
       }
 
-      _pathInfoList = _pathInfoList
-          .where((element) => element.layer != targetIndex)
-          .toList();
+      _pathInfoList.removeAt(targetIndex);
 
 //      最后总图层数量要保证-1
       _layerCnt--;
-
       notifyListeners();
 
       return true;
@@ -152,21 +156,19 @@ class DrawBoardProvider extends ChangeNotifier {
   }
 
 //  交换两个图层
-  bool addSwapTwoLayer(first, second) {
+  bool swapTwoLayer(first, second) {
     if (_isLayerInSuitRange(first) && _isLayerInSuitRange(second)) {
-      int firstIndex = first.toInt();
-      int secondIndex = second.toInt();
+      int firstIndex = int.parse(first);
+      int secondIndex = int.parse(second);
 
-      for (int i = 0; i < _pathInfoList.length; i++) {
-        var e = _pathInfoList[i];
-        if (e.layer == firstIndex) {
-          e.layer = secondIndex;
-          _pathInfoList[i] = e;
-        } else if (e.layer == secondIndex) {
-          e.layer = firstIndex;
-          _pathInfoList[i] = e;
-        }
+//      如果两个输入的交换目标相同，则默认不需要交换，直接返回
+      if (firstIndex == secondIndex) {
+        return true;
       }
+
+      var temp = _pathInfoList[firstIndex];
+      _pathInfoList[firstIndex] = _pathInfoList[secondIndex];
+      _pathInfoList[secondIndex] = temp;
 
       notifyListeners();
       return true;

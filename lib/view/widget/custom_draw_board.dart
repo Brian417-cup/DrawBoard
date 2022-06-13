@@ -71,7 +71,7 @@ class _KeyCustomDrawBoardWidgetState extends State<KeyCustomDrawBoardWidget> {
 //        print('当前这条线绘制完成!!');
           },
           child: CustomPaint(
-            painter: MyCustomPainter(cur.pathInfoList,
+            painter: MyCustomPainter(cur.pathInfoList[cur.curLayerIndex],
                 lastFrame: (oldFrame) {}, targetLayer: cur.curLayerIndex),
           ));
     });
@@ -90,12 +90,16 @@ class MyCustomPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
 //    print('当前一共${_pathList.length}条线');
-    for (int i = 0; i < _pathList.length; i++) {
-      final PathInfo e = _pathList[i];
-      if (e.layer == targetLayer) {
-        canvas.drawPath(e.data, e.pen);
-      }
-    }
+//    for (int i = 0; i < _pathList.length; i++) {
+//      final PathInfo e = _pathList[i];
+//      if (e.layer == targetLayer) {
+//        canvas.drawPath(e.data, e.pen);
+//      }
+//    }
+
+    _pathList.forEach((e) {
+      canvas.drawPath(e.data, e.pen);
+    });
 
 //    print('绘制完成');
   }

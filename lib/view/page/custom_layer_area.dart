@@ -1,8 +1,10 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutterdrawboard/provider/draw_board_provider.dart';
-import 'package:flutterdrawboard/view/custom_layer_list.dart';
-import 'package:flutterdrawboard/view/custom_layer_swap_dialog.dart';
+import 'package:flutterdrawboard/utils/custom_toast.dart';
+import 'package:flutterdrawboard/view/widget/custom_layer_remove_dialog.dart';
+import '../widget/custom_layer_list.dart';
+import '../widget/custom_layer_swap_dialog.dart';
 import 'package:provider/provider.dart';
 
 class CustomLayerArea extends StatefulWidget {
@@ -20,6 +22,7 @@ class _CustomLayerAreaState extends State<CustomLayerArea> {
         return Column(
           children: [
             Expanded(
+              flex: 8,
               child: CustomLayerList(
                   srcLength: cur.layerCnt,
                   curChosenIndex: cur.curLayerIndex,
@@ -28,7 +31,7 @@ class _CustomLayerAreaState extends State<CustomLayerArea> {
                     cur.notifyListeners();
                   }),
             ),
-            Expanded(child: floatingActionBtnGroup())
+            Expanded(flex: 1, child: floatingActionBtnGroup())
           ],
         );
       },
@@ -87,21 +90,40 @@ class _CustomLayerAreaState extends State<CustomLayerArea> {
   Widget decreaseOneBtn() {
     return Container(
       alignment: Alignment.bottomLeft,
-      child: FloatingActionButton(
-        tooltip: '减少一个图层',
-        onPressed: () {
-          print('减一个图层');
+      child: Consumer<DrawBoardProvider>(
+        builder: (context, cur, child) {
+          return FloatingActionButton(
+            tooltip: '删除一个图层',
+            onPressed: () {
+              showCupertinoDialog(
+                  context: context,
+                  builder: (context) {
+                    return CustomLayerRemoveDialog(
+                        maxIndex: cur.layerCnt - 1,
+                        onRemoveConfirm: (indexStr) {
+//              这里一次只支持删除一个图层
+                          if (cur.delTargetLayer(indexStr)) {
+                            DrawBoardToast.showSuccessToast(context, '操作成功');
+                          } else {
+                            DrawBoardToast.showErrorToast(
+                                context, '操作失败，请检查输入是否为数字且数字范围合法!');
+                          }
+                        });
+                  });
+            },
+            child: Container(
+              width: 50,
+              height: 50,
+              decoration:
+                  BoxDecoration(shape: BoxShape.circle, color: Colors.blue),
+              child: Icon(
+                Icons.delete_forever,
+                size: 35,
+                color: Colors.white,
+              ),
+            ),
+          );
         },
-        child: Container(
-          width: 50,
-          height: 50,
-          decoration: BoxDecoration(shape: BoxShape.circle, color: Colors.blue),
-          child: Icon(
-            Icons.delete_forever,
-            size: 35,
-            color: Colors.white,
-          ),
-        ),
       ),
     );
   }
@@ -110,27 +132,40 @@ class _CustomLayerAreaState extends State<CustomLayerArea> {
   Widget swapLayerBtn() {
     return Container(
       alignment: Alignment.bottomLeft,
-      child: FloatingActionButton(
-        tooltip: '交换图层',
-        onPressed: () {
-          print('交换图层');
-
-          showCupertinoDialog(
-              context: context,
-              builder: (context) {
-                return CustomLayerSwapDialog();
-              });
+      child: Consumer<DrawBoardProvider>(
+        builder: (context, cur, child) {
+          return FloatingActionButton(
+            tooltip: '交换图层',
+            onPressed: () {
+              showCupertinoDialog(
+                  context: context,
+                  builder: (context) {
+                    return CustomLayerSwapDialog(
+                      maxIndex: cur.layerCnt - 1,
+                      onSwapConfirm: (firstStr, secondStr) {
+                        if (cur.swapTwoLayer(firstStr, secondStr)) {
+                          DrawBoardToast.showSuccessToast(context, '操作成功');
+                        } else {
+                          DrawBoardToast.showErrorToast(
+                              context, '操作失败，请检查输入是否为数字且数字范围合法!');
+                        }
+                      },
+                    );
+                  });
+            },
+            child: Container(
+              width: 50,
+              height: 50,
+              decoration:
+                  BoxDecoration(shape: BoxShape.circle, color: Colors.blue),
+              child: Icon(
+                Icons.swap_vert,
+                size: 35,
+                color: Colors.white,
+              ),
+            ),
+          );
         },
-        child: Container(
-          width: 50,
-          height: 50,
-          decoration: BoxDecoration(shape: BoxShape.circle, color: Colors.blue),
-          child: Icon(
-            Icons.swap_vert,
-            size: 35,
-            color: Colors.white,
-          ),
-        ),
       ),
     );
   }

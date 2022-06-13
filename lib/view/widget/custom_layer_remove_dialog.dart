@@ -1,40 +1,34 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 
-class CustomLayerSwapDialog extends StatefulWidget {
-  CustomLayerSwapDialog({Key? key}) : super(key: key);
+class CustomLayerRemoveDialog extends StatelessWidget {
+  String txtValue = '';
+  int maxIndex;
+  final Function(String txtValue) onRemoveConfirm;
 
-  @override
-  _CustomLayerSwapDialogState createState() => _CustomLayerSwapDialogState();
-}
-
-class _CustomLayerSwapDialogState extends State<CustomLayerSwapDialog> {
-  String txt1 = '';
-  String txt2 = '';
+  CustomLayerRemoveDialog(
+      {required this.maxIndex, required this.onRemoveConfirm});
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: EdgeInsets.only(left: 10, right: 10),
+      padding: EdgeInsets.only(left: 10, right: 10, bottom: 10),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.end,
         children: [
-          inputGroup(1, '图层一号(直接写入数字编号,从0开始)'),
-          inputGroup(2, '图层二号(直接写入数字编号,从0开始)'),
-          confirmBtn()
+          inputGroup('输入要刪除的单个图层,编号为:0-${maxIndex}'),
+          confirmBtn(context)
         ],
       ),
     );
   }
 
-  Widget inputGroup(@required int no, @required String title) {
+  Widget inputGroup(@required String title) {
     return Card(
       margin: EdgeInsets.only(left: 10, right: 10),
-      shape: no == 1
-          ? RoundedRectangleBorder(
-              borderRadius: BorderRadius.only(
-                  topLeft: Radius.circular(10), topRight: Radius.circular(10)))
-          : BeveledRectangleBorder(),
+      shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.only(
+              topLeft: Radius.circular(10.0), topRight: Radius.circular(10.0))),
       child: ListTile(
         contentPadding: EdgeInsets.only(left: 5, right: 5),
         leading: Text(
@@ -43,19 +37,15 @@ class _CustomLayerSwapDialogState extends State<CustomLayerSwapDialog> {
         ),
         title: CupertinoTextField(
           showCursor: true,
-          onChanged: (value) {
-            if (no == 1) {
-              txt1 = value;
-            } else {
-              txt2 = value;
-            }
+          onChanged: (inputValue) {
+            txtValue = inputValue;
           },
         ),
       ),
     );
   }
 
-  Widget confirmBtn() {
+  Widget confirmBtn(context) {
     return Card(
       margin: EdgeInsets.only(left: 10, right: 10),
       shape: RoundedRectangleBorder(
@@ -70,7 +60,7 @@ class _CustomLayerSwapDialogState extends State<CustomLayerSwapDialog> {
           height: 50,
           color: Colors.blue,
           onPressed: () {
-            print('${txt1}--${txt2}');
+            onRemoveConfirm(txtValue);
             Navigator.of(context).pop();
           },
           child: Text(
