@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutterdrawboard/provider/draw_board_provider.dart';
+import 'package:flutterdrawboard/provider/draw_board_saver_provider.dart';
 import 'package:flutterdrawboard/provider/draw_board_share_screen_provider.dart';
 import 'view/page/custom_draw_board_area.dart';
 import 'package:provider/provider.dart';
@@ -9,6 +10,7 @@ void main() {
     providers: [
       ChangeNotifierProvider(create: (context) => DrawBoardProvider()),
       ChangeNotifierProvider(create: (context) => DrawBoardShareScreenProvider()),
+      ChangeNotifierProvider(create: (context) => DrawBoardSaverProvider()),
     ],
     child: const MyApp(),
   ));

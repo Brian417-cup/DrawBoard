@@ -16,7 +16,7 @@ class CustomLayerRemoveDialog extends StatelessWidget {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.end,
         children: [
-          inputGroup('输入要刪除的单个图层,编号为:0-${maxIndex}'),
+          inputGroup('刪除图层编号:0-${maxIndex}'),
           confirmBtn(context)
         ],
       ),
@@ -65,7 +65,7 @@ class CustomLayerRemoveDialog extends StatelessWidget {
           },
           child: Text(
             '确定',
-            style: TextStyle(color: Colors.white, fontSize: 20),
+            style: TextStyle(color: Colors.white, fontSize: 15),
           ),
         ),
       ),

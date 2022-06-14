@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
 import 'dart:ui';
@@ -62,12 +63,11 @@ class DrawBoardShareScreenProvider with ChangeNotifier {
 
   RawDatagramSocket? _socket = null;
 
-//  释放连接
-  Future<bool> closeConnect()async {
-    try{
+  //  释放连接
+  Future<bool> closeConnect() async {
+    try {
       _socket?.close();
-    }
-    catch(e){
+    } catch (e) {
       print(e);
       return false;
     }
@@ -77,13 +77,13 @@ class DrawBoardShareScreenProvider with ChangeNotifier {
 
 //  共享者初始化
   Future<NetWorkBaseState> sharerInit() async {
-    NetWorkBaseState state = NetWorkBaseState.Error;
+    NetWorkBaseState state = NetWorkBaseState.Sucess;
     try {
       int port = int.parse(_portStr);
-      _socket = await RawDatagramSocket.bind(InternetAddress(_ipStr), port)
-          .then((value) {
+      await RawDatagramSocket.bind(InternetAddress.loopbackIPv4, port)
+          .then((udpSocket) {
+        _socket = udpSocket;
         _socket?.broadcastEnabled = true;
-        state = NetWorkBaseState.Sucess;
       });
     } catch (e) {
       print(e);
@@ -96,12 +96,15 @@ class DrawBoardShareScreenProvider with ChangeNotifier {
 //  发送数据
   Future<bool> sendPicData(Picture rawData, int w, int h) async {
     try {
-      _currPic = await rawData.toImage(w, h).then((value) async {
-        await value.toByteData(format: ImageByteFormat.png).then((value) {
-          _socket?.send(Uint8List.view(value!.buffer),
-              InternetAddress(_portStr), int.parse(_portStr));
+      await rawData.toImage(w, h).then((img) async {
+        await img.toByteData(format: ImageByteFormat.png).then((curSendData) {
+          var temp=_socket?.send(Uint8List.view(curSendData!.buffer),
+              InternetAddress('192.168.137.1'), int.parse(_portStr));
+          print('数据已发送到${_ipStr}-${_portStr},发送了${temp}');
         });
       });
+
+      notifyListeners();
     } catch (e) {
       return false;
     }
@@ -113,11 +116,14 @@ class DrawBoardShareScreenProvider with ChangeNotifier {
     NetWorkBaseState state = NetWorkBaseState.Error;
     try {
       int port = int.parse(_portStr);
-      _socket = await RawDatagramSocket.bind(InternetAddress.anyIPv4, port)
-          .then((value) {
-        _socket?.broadcastEnabled = true;
+//      _socket = await RawDatagramSocket.bind(InternetAddress.loopbackIPv4, port)
+      _socket =
+          await RawDatagramSocket.bind(InternetAddress('10.151.73.216'), port)
+              .then((value) {
         state = NetWorkBaseState.Sucess;
       });
+
+      print('观看者初始化成功');
     } catch (e) {
       print(e);
       return NetWorkBaseState.Exception;
@@ -128,11 +134,25 @@ class DrawBoardShareScreenProvider with ChangeNotifier {
 //  解析图片数据并显示在图片上
   Uint8List? _currPic = null;
 
-//  接收方解析数据
-  decodeReceiveData() {
-    final dg = _socket?.receive();
-    if (dg != null) {
-      _currPic = dg.data;
-    }
+  Uint8List? get currPic => _currPic;
+
+  set currPic(Uint8List? value) {
+    _currPic = value;
   }
+
+//  接收方解析数据
+//  decodeReceiveData() {
+//    print('处理接受数据');
+//    _socket?.listen((event) {
+//      Future.delayed(Duration(seconds: 2)).then((value) {
+//        final dg = _socket?.receive();
+//        if (dg != null) {
+//          _currPic = dg.data;
+//        }
+//        print('接收到数据了');
+//
+//        notifyListeners();
+//      });
+//    });
+//  }
 }

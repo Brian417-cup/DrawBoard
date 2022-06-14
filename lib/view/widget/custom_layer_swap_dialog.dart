@@ -24,8 +24,8 @@ class _CustomLayerSwapDialogState extends State<CustomLayerSwapDialog> {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.end,
         children: [
-          inputGroup(1, '图层一号(直接写入数字编号,0-${widget.maxIndex})'),
-          inputGroup(2, '图层二号(直接写入数字编号,0-${widget.maxIndex})'),
+          inputGroup(1, '编号1,(0-${widget.maxIndex})'),
+          inputGroup(2, '编号2,(0-${widget.maxIndex})'),
           confirmBtn()
         ],
       ),

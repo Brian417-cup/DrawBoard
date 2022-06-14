@@ -1,6 +1,7 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutterdrawboard/provider/draw_board_provider.dart';
+import 'package:flutterdrawboard/provider/draw_board_saver_provider.dart';
 import 'package:flutterdrawboard/provider/draw_board_share_screen_provider.dart';
 import 'package:flutterdrawboard/utils/custom_toast.dart';
 import 'package:flutterdrawboard/view/widget/custom_net_work_ratio.dart';
@@ -25,10 +26,10 @@ class _CustomDrawBoardAreaState extends State<CustomDrawBoardArea> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(
-          '自定义画板',
-          style: TextStyle(fontSize: 20),
-        ),
+//        title: Text(
+//          '自定义画板',
+//          style: TextStyle(fontSize: 20),
+//        ),
         actions: [
 //            画笔颜色调整
           IconButton(
@@ -90,31 +91,46 @@ class _CustomDrawBoardAreaState extends State<CustomDrawBoardArea> {
                 size: 35,
               )),
 //          选择模式
-          Consumer<DrawBoardShareScreenProvider>(
-            builder: (context, cur, child) {
-              return IconButton(
-                  onPressed: () async {
-                    if (!cur.isSharing) {
-                      await _shareIdentityDialogShow(context, cur)
-                          .then((value) {
-                        cur.sharingStateConverse();
-                      });
-                    } else {
-                      if (await cur.closeConnect()) {
-                        DrawBoardToast.showSuccessToast(context, '连接资源释放成功!!');
-                        cur.sharingStateConverse();
-                      } else {
-                        DrawBoardToast.showErrorToast(context, '连接资源释放失败!!');
-                      }
-                    }
-                  },
-                  icon: Icon(
-                    Icons.network_wifi,
-                    size: 35,
-                    color: cur.isSharing ? Colors.purple : Colors.white,
-                  ));
-            },
-          ),
+//        udp网络待实现...
+//          Consumer<DrawBoardShareScreenProvider>(
+//            builder: (context, cur, child) {
+//              return IconButton(
+//                  onPressed: () async {
+//                    if (!cur.isSharing) {
+//                      await _shareIdentityDialogShow(context, cur)
+////                          .then((value) {
+////                        cur.sharingStateConverse();
+////                      })
+//                          ;
+//                    } else {
+//                      if (await cur.closeConnect()) {
+//                        DrawBoardToast.showSuccessToast(context, '连接资源释放成功!!');
+//                        cur.sharingStateConverse();
+//                      } else {
+//                        DrawBoardToast.showErrorToast(context, '连接资源释放失败!!');
+//                      }
+//                    }
+//                  },
+//                  icon: Icon(
+//                    Icons.network_wifi,
+//                    size: 35,
+//                    color: cur.isSharing ? Colors.purple : Colors.white,
+//                  ));
+//            },
+//          ),
+          //保存成图片
+          Consumer<DrawBoardSaverProvider>(builder: (context, cur, child) {
+            return IconButton(
+                tooltip: '保存图片，暂时对Web和Windows端不支持',
+                onPressed: () {
+                  cur.needSaver = true;
+                  cur.notifyListeners();
+                },
+                icon: Icon(
+                  Icons.save,
+                  size: 35,
+                ));
+          }),
           SizedBox(
             width: 30,
           )
@@ -122,18 +138,16 @@ class _CustomDrawBoardAreaState extends State<CustomDrawBoardArea> {
       ),
       body: Container(
           color: Colors.white,
-          child: Consumer<DrawBoardShareScreenProvider>(
-            builder: (context, cur, child) {
-//              根据是否是共享屏幕来动态变化
-              return !cur.isSharing
-                  ? KeyCustomDrawBoardWidget()
-                  : Container(
-                      width: 50,
-                      height: 50,
-                      color: Colors.blue,
-                    );
-            },
-          )),
+          child:
+              Consumer<DrawBoardSaverProvider>(builder: (context, cur, child) {
+            return CustomDrawBoardKeyWidget(
+                isSender: true,
+                getCurPicDatata: (data, w, h) {
+                  if (cur.needSaver) {
+                    cur.saverToImg(data, w, h);
+                  }
+                });
+          })),
     );
   }
 
@@ -189,6 +203,8 @@ class _CustomDrawBoardAreaState extends State<CustomDrawBoardArea> {
         });
   }
 
+//  udp共享屏幕网络部分待实现...
+
 //  分享身份选择
   _shareIdentityDialogShow(
       BuildContext context, DrawBoardShareScreenProvider cur) async {
@@ -201,6 +217,7 @@ class _CustomDrawBoardAreaState extends State<CustomDrawBoardArea> {
             content: CustomNetWorkRatio(
               onRatioChanged: ((isSender) {
                 cur.isSender = isSender;
+                cur.notifyListeners();
               }),
               onIPChanged: (ipStr) {
                 cur.ipStr = ipStr;
@@ -246,11 +263,14 @@ class _CustomDrawBoardAreaState extends State<CustomDrawBoardArea> {
                 onPressed: () async {
 //                  发起者的处理逻辑
                   if (cur.isSender) {
-                    _connectBuildFeedBack(await cur.sharerInit());
+                    _connectBuildFeedBack(await cur.sharerInit(), cur);
                   }
 //                  观看者处理
                   else {
-                    _connectBuildFeedBack(await cur.watcherInit());
+                    _connectBuildFeedBack(
+//                        await cur.watcherInit(),
+                        NetWorkBaseState.Sucess,
+                        cur);
                   }
                 },
                 color: Colors.blue,
@@ -267,10 +287,11 @@ class _CustomDrawBoardAreaState extends State<CustomDrawBoardArea> {
   }
 
 //  连接建立提示
-  _connectBuildFeedBack(connectResult) {
+  _connectBuildFeedBack(connectResult, DrawBoardShareScreenProvider provider) {
     switch (connectResult) {
       case NetWorkBaseState.Sucess:
         DrawBoardToast.showSuccessToast(context, '连接建立成功!');
+        provider.sharingStateConverse();
         Navigator.of(context).pop();
         break;
       case NetWorkBaseState.Exception:
