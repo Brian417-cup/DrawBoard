@@ -76,6 +76,7 @@ class _CustomDrawBoardKeyWidgetState extends State<CustomDrawBoardKeyWidget> {
                 lastFrame: (oldFrame) {},
                 targetLayer: cur.curLayerIndex,
                 isSender: widget.isSender,
+                backGroundColor: cur.backgroundColor,
                 getCurrentData: widget.isSender
                     ? (pic, w, h) {
                         if (isFinished) {
@@ -95,6 +96,7 @@ class MyCustomPainter extends CustomPainter {
   final Function(CustomPainter oldPainter) lastFrame;
   final int targetLayer;
   final bool isSender;
+  final Color backGroundColor;
 
 //  如果是观察者，这里还需要有记录器和画布
   PictureRecorder? recorder = null;
@@ -105,14 +107,18 @@ class MyCustomPainter extends CustomPainter {
       {required this.lastFrame,
       required this.targetLayer,
       required this.isSender,
-      this.getCurrentData});
+      this.getCurrentData,
+      required this.backGroundColor});
 
   @override
   void paint(Canvas canvas, Size size) {
     if (isSender) {
+//      开始录制
       recorder = PictureRecorder();
       outCanvas = Canvas(recorder!);
-
+//      先设置背景色
+      outCanvas?.drawColor(Colors.white, BlendMode.color);
+//      再画路径
       _pathList.forEach((e) {
         canvas.drawPath(e.data, e.pen);
         outCanvas?.drawPath(e.data, e.pen);

@@ -2,7 +2,16 @@ import 'package:flutter/material.dart';
 import 'package:flutterdrawboard/model/PathInfo.dart';
 
 class DrawBoardProvider extends ChangeNotifier {
-//  画笔核心功能
+//  背景色：这里先暂时默认为白色
+  Color _backgroundColor = Colors.white;
+
+  Color get backgroundColor => _backgroundColor;
+
+  set backgroundColor(Color value) {
+    _backgroundColor = value;
+  }
+
+  //  画笔核心功能
 //画笔颜色
   Color _nextPenColor = Colors.blue;
 

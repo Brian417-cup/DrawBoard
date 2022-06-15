@@ -32,64 +32,15 @@ class _CustomDrawBoardAreaState extends State<CustomDrawBoardArea> {
 //        ),
         actions: [
 //            画笔颜色调整
-          IconButton(
-              tooltip: '画笔颜色',
-              onPressed: () {
-                _penColorPickerDialogShow(context);
-              },
-              icon: Icon(
-                Icons.color_lens,
-                size: 35,
-              )),
+          buildPenColorBtn(context),
 //            画笔粗细调整
-          IconButton(
-              tooltip: '画笔粗细',
-              onPressed: () {
-                _penStrokeWidthDialogShow(context);
-              },
-              icon: Icon(
-                Icons.brush,
-                size: 35,
-              )),
+          buildPenWidthBtn(context),
 //            橡皮擦功能
-          Consumer<DrawBoardProvider>(
-            builder: (context, cur, child) {
-              return IconButton(
-                  tooltip: '橡皮擦',
-                  onPressed: () {
-                    cur.eraserConverse();
-                  },
-                  icon: Icon(
-                    Icons.style,
-                    color:
-                        cur.isEraser ? Colors.deepOrangeAccent : Colors.white,
-                    size: 35,
-                  ));
-            },
-          ),
+          buildEraserBtn(),
 //          返回上一步功能
-          Consumer<DrawBoardProvider>(
-            builder: (context, cur, child) {
-              return IconButton(
-                  tooltip: '返回上一步',
-                  onPressed: () {
-                    cur.popLastPathData();
-                  },
-                  icon: Icon(
-                    Icons.rotate_left,
-                    size: 35,
-                  ));
-            },
-          ),
+          buildRollBackBtn(),
 //            多页图层编辑功能
-          IconButton(
-              onPressed: () {
-                layerEditorDialogShow(context);
-              },
-              icon: Icon(
-                Icons.find_in_page,
-                size: 35,
-              )),
+          buildLayerEditorBtn(context),
 //          选择模式
 //        udp网络待实现...
 //          Consumer<DrawBoardShareScreenProvider>(
@@ -119,38 +70,40 @@ class _CustomDrawBoardAreaState extends State<CustomDrawBoardArea> {
 //            },
 //          ),
           //保存成图片
-          Consumer<DrawBoardSaverProvider>(builder: (context, cur, child) {
-            return IconButton(
-                tooltip: '保存图片，暂时对Web和Windows端不支持',
-                onPressed: () {
-                  cur.needSaver = true;
-                  cur.notifyListeners();
-                },
-                icon: Icon(
-                  Icons.save,
-                  size: 35,
-                ));
-          }),
+          buildImgSaverBtn(),
           SizedBox(
             width: 30,
           )
         ],
       ),
+//      核心部分：画板
       body: Container(
           color: Colors.white,
           child:
               Consumer<DrawBoardSaverProvider>(builder: (context, cur, child) {
             return CustomDrawBoardKeyWidget(
                 isSender: true,
-                getCurPicDatata: (data, w, h) {
-                  if (cur.needSaver) {
-                    cur.saverToImg(data, w, h);
-                  }
+                getCurPicDatata: (data, w, h) async {
+                  _saveImgWithResult(cur, data, w, h);
                 });
           })),
     );
   }
 
+//  画笔颜色按钮
+  Widget buildPenColorBtn(BuildContext context) {
+    return IconButton(
+        tooltip: '画笔颜色',
+        onPressed: () {
+          _penColorPickerDialogShow(context);
+        },
+        icon: Icon(
+          Icons.color_lens,
+          size: 35,
+        ));
+  }
+
+//  画笔颜色选择对话框
   _penColorPickerDialogShow(context) {
     showCupertinoDialog(
         context: context,
@@ -168,6 +121,20 @@ class _CustomDrawBoardAreaState extends State<CustomDrawBoardArea> {
         });
   }
 
+  //  画笔粗细按钮
+  Widget buildPenWidthBtn(BuildContext context) {
+    return IconButton(
+        tooltip: '画笔粗细',
+        onPressed: () {
+          _penStrokeWidthDialogShow(context);
+        },
+        icon: Icon(
+          Icons.brush,
+          size: 35,
+        ));
+  }
+
+//  画笔粗细选择对话框
   _penStrokeWidthDialogShow(context) {
     showCupertinoDialog(
         context: context,
@@ -191,6 +158,41 @@ class _CustomDrawBoardAreaState extends State<CustomDrawBoardArea> {
         });
   }
 
+  //  橡皮擦按钮
+  Widget buildEraserBtn() {
+    return Consumer<DrawBoardProvider>(
+      builder: (context, cur, child) {
+        return IconButton(
+            tooltip: '橡皮擦',
+            onPressed: () {
+              cur.eraserConverse();
+            },
+            icon: Icon(
+              Icons.style,
+              color: cur.isEraser ? Colors.deepOrangeAccent : Colors.white,
+              size: 35,
+            ));
+      },
+    );
+  }
+
+  //  回退上一步按钮
+  Widget buildRollBackBtn() {
+    return Consumer<DrawBoardProvider>(
+      builder: (context, cur, child) {
+        return IconButton(
+            tooltip: '返回上一步',
+            onPressed: () {
+              cur.popLastPathData();
+            },
+            icon: Icon(
+              Icons.rotate_left,
+              size: 35,
+            ));
+      },
+    );
+  }
+
   layerEditorDialogShow(BuildContext context) {
     showCupertinoDialog(
         context: context,
@@ -201,6 +203,18 @@ class _CustomDrawBoardAreaState extends State<CustomDrawBoardArea> {
             },
           );
         });
+  }
+
+  //  图层编辑器
+  Widget buildLayerEditorBtn(BuildContext context) {
+    return IconButton(
+        onPressed: () {
+          layerEditorDialogShow(context);
+        },
+        icon: Icon(
+          Icons.find_in_page,
+          size: 35,
+        ));
   }
 
 //  udp共享屏幕网络部分待实现...
@@ -300,6 +314,39 @@ class _CustomDrawBoardAreaState extends State<CustomDrawBoardArea> {
       case NetWorkBaseState.Error:
         DrawBoardToast.showErrorToast(context, '连接建立失败，可能由于IP或者端口已被占用');
         break;
+    }
+  }
+
+  //  保存图片具体操作函数
+  Consumer<DrawBoardSaverProvider> buildImgSaverBtn() {
+    return Consumer<DrawBoardSaverProvider>(builder: (context, cur, child) {
+      return IconButton(
+          tooltip: '保存图片，暂时只支持移动端',
+          onPressed: () {
+            cur.needSaver = true;
+            cur.notifyListeners();
+          },
+          icon: Icon(
+            Icons.save,
+            size: 35,
+          ));
+    });
+  }
+
+//  保存图片处理
+  _saveImgWithResult(DrawBoardSaverProvider cur, data, w, h) async {
+    if (cur.needSaver) {
+      switch (await cur.saverToImg(data, w, h)) {
+        case SaverResult.Success:
+          DrawBoardToast.showSuccessToast(context, '保存成功');
+          break;
+        case SaverResult.Error:
+          DrawBoardToast.showErrorToast(context, '保存失败');
+          break;
+        case SaverResult.Exception:
+          DrawBoardToast.showErrorToast(context, '参数异常');
+          break;
+      }
     }
   }
 }
