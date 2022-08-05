@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
 
-class CustomNetWorkRatio extends StatefulWidget {
+//和主文件的_shareIdentityDialogShow一起使用
+class CustomShareScreenDialog extends StatefulWidget {
   final Function(bool isServer) onRatioChanged;
   final Function(String ipStr) onIPChanged;
   final Function(String portStr) onPortChanged;
 
-  CustomNetWorkRatio(
+  CustomShareScreenDialog(
       {Key? key,
       required this.onRatioChanged,
       required this.onIPChanged,
@@ -13,10 +14,10 @@ class CustomNetWorkRatio extends StatefulWidget {
       : super(key: key);
 
   @override
-  _CustomNetWorkRatioState createState() => _CustomNetWorkRatioState();
+  _CustomShareScreenDialogState createState() => _CustomShareScreenDialogState();
 }
 
-class _CustomNetWorkRatioState extends State<CustomNetWorkRatio> {
+class _CustomShareScreenDialogState extends State<CustomShareScreenDialog> {
   int groupValue = 1;
   bool isSender = true;
   String ipAddressStr = '';
@@ -38,24 +39,27 @@ class _CustomNetWorkRatioState extends State<CustomNetWorkRatio> {
 //          是发起者的处理方法
               ? Container(
                   height: 100,
-                  width: 250,
+//                  width: 250,
                   padding: EdgeInsets.only(top: 3),
                   child: Column(
                     children: [
 //                      IP地址组
-                      _ipGroupForm(),
+//                      _ipGroupForm('本机'),
 //                      端口输入组
-                      _portGroupForm()
+                      _portGroupForm('本机')
                     ],
                   ))
 //          观看者的处理方法
               : Container(
                   height: 100,
-                  width: 250,
+//                  width: 250,
                   padding: EdgeInsets.only(top: 3),
-                  child: //                      端口输入组
-                      _portGroupForm(),
-                )
+                  child: Column(
+                    children: [
+                      _ipGroupForm('分享者'),
+                      _portGroupForm('分享者'),
+                    ],
+                  ))
         ],
       ),
     );
@@ -109,12 +113,12 @@ class _CustomNetWorkRatioState extends State<CustomNetWorkRatio> {
 
 //  输入框信息组
 //    IP组
-  Widget _ipGroupForm() {
+  Widget _ipGroupForm(String name) {
     return Row(
       children: [
 //            IP地址说明
         Text(
-          '观看者IP:',
+          '${name}IP:',
           style: TextStyle(fontSize: 20),
         ),
         const SizedBox(width: 20),
@@ -133,12 +137,12 @@ class _CustomNetWorkRatioState extends State<CustomNetWorkRatio> {
   }
 
 //    端口号组
-  Widget _portGroupForm() {
+  Widget _portGroupForm(String name) {
     return Row(
       children: [
 //                          端口号说明
         Text(
-          '端口号',
+          '${name}端口:',
           style: TextStyle(fontSize: 20),
         ),
         const SizedBox(width: 20),

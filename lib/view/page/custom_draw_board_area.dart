@@ -1,10 +1,15 @@
+import 'dart:async';
+import 'dart:io';
+
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutterdrawboard/provider/draw_board_provider.dart';
 import 'package:flutterdrawboard/provider/draw_board_saver_provider.dart';
 import 'package:flutterdrawboard/provider/draw_board_share_screen_provider.dart';
 import 'package:flutterdrawboard/utils/custom_toast.dart';
-import 'package:flutterdrawboard/view/widget/custom_net_work_ratio.dart';
+import 'package:flutterdrawboard/view/widget/custom_share_screen_dialog.dart';
+import 'package:flutterdrawboard/view/widget/custom_watcher_screen.dart';
+import '../../model/OperationIdentity.dart';
 import 'custom_layer_area.dart';
 import '../widget/custom_slider.dart';
 import '../widget/pen_color_picker.dart';
@@ -41,35 +46,9 @@ class _CustomDrawBoardAreaState extends State<CustomDrawBoardArea> {
           buildRollBackBtn(),
 //            多页图层编辑功能
           buildLayerEditorBtn(context),
-//          选择模式
-//        udp网络待实现...
-//          Consumer<DrawBoardShareScreenProvider>(
-//            builder: (context, cur, child) {
-//              return IconButton(
-//                  onPressed: () async {
-//                    if (!cur.isSharing) {
-//                      await _shareIdentityDialogShow(context, cur)
-////                          .then((value) {
-////                        cur.sharingStateConverse();
-////                      })
-//                          ;
-//                    } else {
-//                      if (await cur.closeConnect()) {
-//                        DrawBoardToast.showSuccessToast(context, '连接资源释放成功!!');
-//                        cur.sharingStateConverse();
-//                      } else {
-//                        DrawBoardToast.showErrorToast(context, '连接资源释放失败!!');
-//                      }
-//                    }
-//                  },
-//                  icon: Icon(
-//                    Icons.network_wifi,
-//                    size: 35,
-//                    color: cur.isSharing ? Colors.purple : Colors.white,
-//                  ));
-//            },
-//          ),
-          //保存成图片
+//          画板共享选择模式
+          buildShareScreenBtn(),
+//          保存成图片
           buildImgSaverBtn(),
           SizedBox(
             width: 30,
@@ -79,14 +58,83 @@ class _CustomDrawBoardAreaState extends State<CustomDrawBoardArea> {
 //      核心部分：画板
       body: Container(
           color: Colors.white,
-          child:
-              Consumer<DrawBoardSaverProvider>(builder: (context, cur, child) {
-            return CustomDrawBoardKeyWidget(
-                isSender: true,
-                getCurPicDatata: (data, w, h) async {
-                  _saveImgWithResult(cur, data, w, h);
-                });
+          child: Consumer<DrawBoardShareScreenProvider>(
+              builder: (context, cur, child) {
+            final shareDelegat = cur;
+
+            return Consumer<DrawBoardSaverProvider>(
+                builder: (context, cur, child) {
+//                  新版方法，用身份枚举来进行判断
+              switch (shareDelegat.identity) {
+                case OperationIdentity.Watcher:
+                  return Builder(
+                      builder: (context) =>
+                          CustomWatcherScreen(shareDelegat.currPic));
+                case OperationIdentity.Saver:
+                case OperationIdentity.None:
+                  return CustomDrawBoardKeyWidget(
+                      identity: shareDelegat.identity,
+                      getCurPicDatata: (data, w, h) async {
+                        _saveImgWithResult(shareDelegat, cur, data, w, h);
+                      });
+//        return CustomDrawBoardKeyWidget(isSenderOrSaver: isSenderOrSaver, getCurPicDatata: getCurPicDatata)
+                case OperationIdentity.Sharer:
+                  return CustomDrawBoardKeyWidget(
+                      identity: shareDelegat.identity,
+                      getCurPicDatata: (data, w, h) async {
+                        shareDelegat.sendPicData(data, w, h);
+                      });
+              }
+//                  是保存动作、发送还是监控录屏
+//              return !(shareDelegat.isSharing && !shareDelegat.isSender)
+//                  ? CustomDrawBoardKeyWidget(
+////                      isSenderOrSaver:
+////                          (shareDelegat.isSharing && shareDelegat.isSender) ||
+////                              cur.needSaver,
+//                      identity: shareDelegat.identity,
+//                      getCurPicDatata: (data, w, h) async {
+//                        _saveImgWithResult(cur, data, w, h);
+//
+////                    新加入的发送数据项目
+//                        if (shareDelegat.isSharing && shareDelegat.isSender) {
+//                          shareDelegat.sendPicData(data, w, h);
+//                        }
+//                      })
+//                  :
+////                  接收者控件
+//                  Builder(
+//                      builder: (context) =>
+//                          CustomWatcherScreen(shareDelegat.currPic));
+            });
           })),
+    );
+  }
+
+//  屏幕共享
+  Widget buildShareScreenBtn() {
+    return Consumer<DrawBoardShareScreenProvider>(
+      builder: (context, cur, child) {
+        return IconButton(
+            onPressed: () async {
+              if (!cur.isPlatformFittted()) {
+                DrawBoardToast.showErrorToast(context, '当前平台不支持该操作');
+              } else if (!cur.isSharing) {
+                await _shareIdentityDialogShow(context, cur);
+              } else {
+                if (await cur.closeConnect()) {
+                  DrawBoardToast.showSuccessToast(context, '连接资源释放成功!!');
+                  cur.sharingStateConverse();
+                } else {
+                  DrawBoardToast.showErrorToast(context, '连接资源释放失败!!');
+                }
+              }
+            },
+            icon: Icon(
+              Icons.wb_cloudy,
+              size: 35,
+              color: cur.isSharing ? Colors.purple : Colors.white,
+            ));
+      },
     );
   }
 
@@ -228,9 +276,15 @@ class _CustomDrawBoardAreaState extends State<CustomDrawBoardArea> {
         builder: (context) {
           return AlertDialog(
             contentPadding: EdgeInsets.all(10),
-            content: CustomNetWorkRatio(
+            content: CustomShareScreenDialog(
               onRatioChanged: ((isSender) {
                 cur.isSender = isSender;
+//                新变量，用枚举替换逻辑bool来判断身份信息
+                if (isSender) {
+                  cur.identity = OperationIdentity.Sharer;
+                } else {
+                  cur.identity = OperationIdentity.Watcher;
+                }
                 cur.notifyListeners();
               }),
               onIPChanged: (ipStr) {
@@ -245,9 +299,9 @@ class _CustomDrawBoardAreaState extends State<CustomDrawBoardArea> {
 //              关闭共享按钮
               MaterialButton(
                 onPressed: () {
-                  cur.clearSocketInfo();
-                  cur.isSharing = false;
-                  cur.notifyListeners();
+                  cur.clearShareInfo();
+//                  cur.isSharing = false;
+//                  cur.notifyListeners();
                   Navigator.of(context).pop();
                 },
                 color: Colors.blue,
@@ -261,7 +315,7 @@ class _CustomDrawBoardAreaState extends State<CustomDrawBoardArea> {
 //              待会再设按钮
               MaterialButton(
                 onPressed: () {
-                  cur.clearSocketInfo();
+                  cur.clearShareInfo();
                   Navigator.of(context).pop();
                 },
                 color: Colors.blue,
@@ -282,10 +336,12 @@ class _CustomDrawBoardAreaState extends State<CustomDrawBoardArea> {
 //                  观看者处理
                   else {
                     _connectBuildFeedBack(
-//                        await cur.watcherInit(),
-                        NetWorkBaseState.Sucess,
+                        await cur.watcherInit(),
+//                        NetWorkBaseState.Sucess,
                         cur);
                   }
+                  cur.isSharing = true;
+                  cur.notifyListeners();
                 },
                 color: Colors.blue,
                 minWidth: 30,
@@ -318,23 +374,31 @@ class _CustomDrawBoardAreaState extends State<CustomDrawBoardArea> {
   }
 
   //  保存图片具体操作函数
-  Consumer<DrawBoardSaverProvider> buildImgSaverBtn() {
+  Widget buildImgSaverBtn() {
     return Consumer<DrawBoardSaverProvider>(builder: (context, cur, child) {
-      return IconButton(
-          tooltip: '保存图片，暂时只支持移动端',
-          onPressed: () {
-            cur.needSaver = true;
-            cur.notifyListeners();
-          },
-          icon: Icon(
-            Icons.save,
-            size: 35,
-          ));
+      return Consumer<DrawBoardShareScreenProvider>(
+          builder: (context, shareDelegate, child) {
+        return IconButton(
+            tooltip: '保存图片，暂时只支持移动端',
+            onPressed: () {
+              cur.needSaver = true;
+//              新加入的身份枚举管理
+              shareDelegate.identity = OperationIdentity.Saver;
+              cur.notifyListeners();
+//              新加入的身份枚举管理
+              shareDelegate.notifyListeners();
+            },
+            icon: Icon(
+              Icons.save,
+              size: 35,
+            ));
+      });
     });
   }
 
 //  保存图片处理
-  _saveImgWithResult(DrawBoardSaverProvider cur, data, w, h) async {
+  _saveImgWithResult(DrawBoardShareScreenProvider shareDelegate,
+      DrawBoardSaverProvider cur, data, w, h) async {
     if (cur.needSaver) {
       switch (await cur.saverToImg(data, w, h)) {
         case SaverResult.Success:
@@ -343,10 +407,17 @@ class _CustomDrawBoardAreaState extends State<CustomDrawBoardArea> {
         case SaverResult.Error:
           DrawBoardToast.showErrorToast(context, '保存失败');
           break;
+        case SaverResult.ErrorPlatform:
+          DrawBoardToast.showErrorToast(context, '当前平台暂不支持该操作');
+          break;
         case SaverResult.Exception:
           DrawBoardToast.showErrorToast(context, '参数异常');
           break;
       }
     }
+
+//    新加入的身份管理
+    shareDelegate.identity = OperationIdentity.None;
+//    shareDelegate.notifyListeners();
   }
 }

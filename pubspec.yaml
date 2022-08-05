@@ -50,6 +50,7 @@ dev_dependencies:
   ftoast: ^2.0.0
   image_gallery_saver: ^1.6.9
   permission_handler: ^8.1.6
+  flutter_image_compress: ^1.1.1
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec

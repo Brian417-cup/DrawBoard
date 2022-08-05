@@ -1,10 +1,17 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
 import 'dart:ui';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutterdrawboard/utils/custom_compress_data.dart';
+import 'package:flutterdrawboard/utils/custom_socket_client.dart';
+import 'package:flutterdrawboard/utils/custom_socket_server.dart';
+
+import '../model/OperationIdentity.dart';
 
 //连接状态
 enum NetWorkBaseState {
@@ -14,6 +21,11 @@ enum NetWorkBaseState {
 }
 
 class DrawBoardShareScreenProvider with ChangeNotifier {
+//  平台检查，当前网页端不支持该功能
+  bool isPlatformFittted() {
+    return !kIsWeb;
+  }
+
 //  是否处于分享状态
   bool _isSharing = false;
 
@@ -25,10 +37,12 @@ class DrawBoardShareScreenProvider with ChangeNotifier {
 
   sharingStateConverse() {
     _isSharing = !_isSharing;
+//    print('当前状态:${isSharing}');
+    clearShareInfo();
     notifyListeners();
   }
 
-  //  是否是共享画板的发起者
+//  是否是共享画板的发起者
   bool _isSender = true;
 
   bool get isSender => _isSender;
@@ -56,22 +70,60 @@ class DrawBoardShareScreenProvider with ChangeNotifier {
   }
 
 //  IP和端口号清空
-  clearSocketInfo() {
+  clearShareInfo() {
     _ipStr = '';
     _portStr = '';
+    _currPic = null;
+    _isSharing = false;
+
+    notifyListeners();
   }
 
-  RawDatagramSocket? _socket = null;
+//  新API
+//身份
+  OperationIdentity _identity = OperationIdentity.None;
 
-  //  释放连接
+  OperationIdentity get identity => _identity;
+
+  set identity(OperationIdentity value) {
+    _identity = value;
+  }
+
+//  分享者作为服务器
+  CustomSocketServer? server = null;
+
+//  观看者作为客户端
+  CustomSocketClient? client = null;
+
+//  释放连接
   Future<bool> closeConnect() async {
-    try {
-      _socket?.close();
-    } catch (e) {
-      print(e);
-      return false;
-    }
+//    try {
+//      _socket?.close();
+//    } catch (e) {
+//      print(e);
+//      return false;
+//    }
+//
+//    return true;
 
+    try {
+      switch (_identity) {
+        case OperationIdentity.Sharer:
+          await server?.close();
+          break;
+        case OperationIdentity.Watcher:
+          await client?.closeConnection().then((value) {
+            //关闭连接后待添加功能
+          });
+          break;
+        default:
+          break;
+      }
+    } catch (e) {
+      return false;
+    } finally {
+      _identity = OperationIdentity.None;
+    }
     return true;
   }
 
@@ -79,12 +131,14 @@ class DrawBoardShareScreenProvider with ChangeNotifier {
   Future<NetWorkBaseState> sharerInit() async {
     NetWorkBaseState state = NetWorkBaseState.Sucess;
     try {
-      int port = int.parse(_portStr);
-      await RawDatagramSocket.bind(InternetAddress.loopbackIPv4, port)
-          .then((udpSocket) {
-        _socket = udpSocket;
-        _socket?.broadcastEnabled = true;
-      });
+      server = CustomSocketServer();
+//      server?.serverBind(_ipStr, int.parse(_portStr));
+      server?.serverBind(null, int.parse(_portStr));
+
+      _isSharing = true;
+      _identity = OperationIdentity.Sharer;
+
+      print('分享者初始化成功');
     } catch (e) {
       print(e);
       return NetWorkBaseState.Exception;
@@ -97,10 +151,23 @@ class DrawBoardShareScreenProvider with ChangeNotifier {
   Future<bool> sendPicData(Picture rawData, int w, int h) async {
     try {
       await rawData.toImage(w, h).then((img) async {
-        await img.toByteData(format: ImageByteFormat.png).then((curSendData) {
-          var temp=_socket?.send(Uint8List.view(curSendData!.buffer),
-              InternetAddress('192.168.137.1'), int.parse(_portStr));
-          print('数据已发送到${_ipStr}-${_portStr},发送了${temp}');
+        await img
+            .toByteData(format: ImageByteFormat.png)
+            .then((curSendData) async {
+          print(curSendData!.buffer.lengthInBytes);
+//          新版的发送数据
+          if (curSendData != null) {
+//            先压缩后发送(仅适用于移动设备)
+            if (Platform.isIOS || Platform.isAndroid) {
+              server?.sendIntBytes(await CustomCompressData.fromUintList(
+                  Uint8List.view(curSendData!.buffer), null, null, 70));
+            } else {
+              print('桌面端发送');
+              server?.sendIntBytes(Uint8List.view(curSendData!.buffer));
+            }
+
+            print('发送数据成功');
+          }
         });
       });
 
@@ -115,19 +182,24 @@ class DrawBoardShareScreenProvider with ChangeNotifier {
   Future<NetWorkBaseState> watcherInit() async {
     NetWorkBaseState state = NetWorkBaseState.Error;
     try {
-      int port = int.parse(_portStr);
-//      _socket = await RawDatagramSocket.bind(InternetAddress.loopbackIPv4, port)
-      _socket =
-          await RawDatagramSocket.bind(InternetAddress('10.151.73.216'), port)
-              .then((value) {
-        state = NetWorkBaseState.Sucess;
-      });
+//      新版写法
+      client = CustomSocketClient(
+          targetIp: _ipStr,
+          targetPort: _portStr,
+          onDataReceive: (data) {
+            decodePicData(data);
+          });
+
+      _isSharing = true;
+      _identity = OperationIdentity.Watcher;
 
       print('观看者初始化成功');
+      state = NetWorkBaseState.Sucess;
     } catch (e) {
       print(e);
       return NetWorkBaseState.Exception;
     }
+
     return state;
   }
 
@@ -141,18 +213,13 @@ class DrawBoardShareScreenProvider with ChangeNotifier {
   }
 
 //  接收方解析数据
-//  decodeReceiveData() {
-//    print('处理接受数据');
-//    _socket?.listen((event) {
-//      Future.delayed(Duration(seconds: 2)).then((value) {
-//        final dg = _socket?.receive();
-//        if (dg != null) {
-//          _currPic = dg.data;
-//        }
-//        print('接收到数据了');
-//
-//        notifyListeners();
-//      });
-//    });
-//  }
+//新的测试API
+  decodePicData(Uint8List? src) {
+    if (src != null) {
+      _currPic = src;
+    } else {
+      return;
+    }
+    notifyListeners();
+  }
 }
