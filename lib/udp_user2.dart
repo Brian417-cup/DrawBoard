@@ -2,6 +2,8 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
+//客户端原型
+
 WebSocket? clientSocket;
 
 void main() async{

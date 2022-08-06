@@ -20,6 +20,9 @@ enum NetWorkBaseState {
   Sucess,
 }
 
+//放大镜功能下的状态选择
+enum MagnifierShape { Retangle, Circle }
+
 class DrawBoardShareScreenProvider with ChangeNotifier {
 //  平台检查，当前网页端不支持该功能
   bool isPlatformFittted() {
@@ -69,13 +72,19 @@ class DrawBoardShareScreenProvider with ChangeNotifier {
     _portStr = value;
   }
 
+//  对话框打开第一次需要初始化身份
+  identityInitOnDialogOpen() {
+    _isSender = true;
+    _identity = OperationIdentity.Sharer;
+  }
+
 //  IP和端口号清空
   clearShareInfo() {
     _ipStr = '';
     _portStr = '';
     _currPic = null;
     _isSharing = false;
-
+//    _identity = OperationIdentity.None;
     notifyListeners();
   }
 
@@ -213,13 +222,54 @@ class DrawBoardShareScreenProvider with ChangeNotifier {
   }
 
 //  接收方解析数据
-//新的测试API
   decodePicData(Uint8List? src) {
     if (src != null) {
       _currPic = src;
     } else {
       return;
     }
+    notifyListeners();
+  }
+
+//  放大镜部分
+  bool _isMagnifierOpen = false;
+  double _magnifySize = 2.0;
+  final _magnifyStep = 0.2;
+  MagnifierShape _shape = MagnifierShape.Retangle;
+
+  double get magnifySize => _magnifySize;
+
+  set magnifySize(double value) {
+    _magnifySize = value;
+  }
+
+  bool get isMagnifierOpen => _isMagnifierOpen;
+
+  set isMagnifierOpen(bool value) {
+    _isMagnifierOpen = value;
+  }
+
+//  放大镜状态转换
+  magnifierStateConverse() {
+    _isMagnifierOpen = !_isMagnifierOpen;
+    notifyListeners();
+  }
+
+//  一次加0.2
+  addScale() {
+    if (_magnifySize + _magnifyStep <= 5.0) {
+      _magnifySize += _magnifyStep;
+    }
+
+    notifyListeners();
+  }
+
+  //    一次减0.2
+  subScale() {
+    if (_magnifySize - _magnifyStep >= 1.0) {
+      _magnifySize -= _magnifyStep;
+    }
+
     notifyListeners();
   }
 }

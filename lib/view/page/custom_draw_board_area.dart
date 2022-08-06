@@ -85,26 +85,6 @@ class _CustomDrawBoardAreaState extends State<CustomDrawBoardArea> {
                         shareDelegat.sendPicData(data, w, h);
                       });
               }
-//                  是保存动作、发送还是监控录屏
-//              return !(shareDelegat.isSharing && !shareDelegat.isSender)
-//                  ? CustomDrawBoardKeyWidget(
-////                      isSenderOrSaver:
-////                          (shareDelegat.isSharing && shareDelegat.isSender) ||
-////                              cur.needSaver,
-//                      identity: shareDelegat.identity,
-//                      getCurPicDatata: (data, w, h) async {
-//                        _saveImgWithResult(cur, data, w, h);
-//
-////                    新加入的发送数据项目
-//                        if (shareDelegat.isSharing && shareDelegat.isSender) {
-//                          shareDelegat.sendPicData(data, w, h);
-//                        }
-//                      })
-//                  :
-////                  接收者控件
-//                  Builder(
-//                      builder: (context) =>
-//                          CustomWatcherScreen(shareDelegat.currPic));
             });
           })),
     );
@@ -116,9 +96,7 @@ class _CustomDrawBoardAreaState extends State<CustomDrawBoardArea> {
       builder: (context, cur, child) {
         return IconButton(
             onPressed: () async {
-              if (!cur.isPlatformFittted()) {
-                DrawBoardToast.showErrorToast(context, '当前平台不支持该操作');
-              } else if (!cur.isSharing) {
+              if (!cur.isSharing) {
                 await _shareIdentityDialogShow(context, cur);
               } else {
                 if (await cur.closeConnect()) {
@@ -270,6 +248,8 @@ class _CustomDrawBoardAreaState extends State<CustomDrawBoardArea> {
 //  分享身份选择
   _shareIdentityDialogShow(
       BuildContext context, DrawBoardShareScreenProvider cur) async {
+    cur.identityInitOnDialogOpen();
+
     //展示模式选择对话框
     showCupertinoDialog(
         context: context,
@@ -277,6 +257,10 @@ class _CustomDrawBoardAreaState extends State<CustomDrawBoardArea> {
           return AlertDialog(
             contentPadding: EdgeInsets.all(10),
             content: CustomShareScreenDialog(
+              onInitIdentity: () {
+//                  cur.isSender=true;
+//                  cur.identity=OperationIdentity.Sharer;
+              },
               onRatioChanged: ((isSender) {
                 cur.isSender = isSender;
 //                新变量，用枚举替换逻辑bool来判断身份信息

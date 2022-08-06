@@ -4,6 +4,8 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 
+//服务端原型
+
 HttpServer? server;
 WebSocket? serverSocket;
 

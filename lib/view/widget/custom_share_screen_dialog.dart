@@ -6,15 +6,20 @@ class CustomShareScreenDialog extends StatefulWidget {
   final Function(String ipStr) onIPChanged;
   final Function(String portStr) onPortChanged;
 
+//  在一开始就要进行身份确认
+  final Function() onInitIdentity;
+
   CustomShareScreenDialog(
       {Key? key,
+      required this.onInitIdentity,
       required this.onRatioChanged,
       required this.onIPChanged,
       required this.onPortChanged})
       : super(key: key);
 
   @override
-  _CustomShareScreenDialogState createState() => _CustomShareScreenDialogState();
+  _CustomShareScreenDialogState createState() =>
+      _CustomShareScreenDialogState();
 }
 
 class _CustomShareScreenDialogState extends State<CustomShareScreenDialog> {
@@ -27,7 +32,14 @@ class _CustomShareScreenDialogState extends State<CustomShareScreenDialog> {
   final activateColor = Colors.blue;
 
   @override
+  void initState() {
+    super.initState();
+    widget.onInitIdentity();
+  }
+
+  @override
   Widget build(BuildContext context) {
+    widget.onInitIdentity();
     return Container(
       padding: EdgeInsets.all(20),
       child: Column(
@@ -38,7 +50,7 @@ class _CustomShareScreenDialogState extends State<CustomShareScreenDialog> {
           isSender
 //          是发起者的处理方法
               ? Container(
-                  height: 100,
+//                  height: 100,
 //                  width: 250,
                   padding: EdgeInsets.only(top: 3),
                   child: Column(
@@ -51,7 +63,7 @@ class _CustomShareScreenDialogState extends State<CustomShareScreenDialog> {
                   ))
 //          观看者的处理方法
               : Container(
-                  height: 100,
+//                  height: 100,
 //                  width: 250,
                   padding: EdgeInsets.only(top: 3),
                   child: Column(
@@ -121,7 +133,7 @@ class _CustomShareScreenDialogState extends State<CustomShareScreenDialog> {
           '${name}IP:',
           style: TextStyle(fontSize: 20),
         ),
-        const SizedBox(width: 20),
+        const SizedBox(width: 10),
 //            IP地址输入
         Container(
           width: inputTextFieldWidth,
@@ -145,7 +157,7 @@ class _CustomShareScreenDialogState extends State<CustomShareScreenDialog> {
           '${name}端口:',
           style: TextStyle(fontSize: 20),
         ),
-        const SizedBox(width: 20),
+        const SizedBox(width: 10),
 //            端口号输入
         Container(
           width: inputTextFieldWidth,
