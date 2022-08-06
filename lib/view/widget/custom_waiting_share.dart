@@ -51,15 +51,20 @@ class _CustomWaitingShareState extends State<CustomWaitingShare>
   Widget build(BuildContext context) {
     return Container(
       child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-        CustomPaint(
-            painter: BorderPainter(
-                width: widget.totalWidth,
-                height: widget.totalHeight,
-                borderRadius: widget.borderRaidus,
-                controller: _controller!,
-                firstBorderColor: _colorList[_curIndex].withOpacity(0.2),
-                secondBorderColor: _colorList[_curIndex])),
-        SizedBox(height: 50,),
+        Transform.translate(
+          offset: Offset(-widget.totalWidth / 2, -widget.totalHeight / 2),
+          child: CustomPaint(
+              painter: BorderPainter(
+                  width: widget.totalWidth,
+                  height: widget.totalHeight,
+                  borderRadius: widget.borderRaidus,
+                  controller: _controller!,
+                  firstBorderColor: _colorList[_curIndex].withOpacity(0.2),
+                  secondBorderColor: _colorList[_curIndex])),
+        ),
+        SizedBox(
+          height: 50,
+        ),
         Text(
           '正在等待分享者的加入，请稍等片刻~~~',
           style: TextStyle(fontSize: 30),

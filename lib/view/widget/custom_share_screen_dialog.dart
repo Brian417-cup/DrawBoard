@@ -2,12 +2,11 @@ import 'package:flutter/material.dart';
 
 //和主文件的_shareIdentityDialogShow一起使用
 class CustomShareScreenDialog extends StatefulWidget {
+  //  在一开始就要进行身份确认
+  final Function() onInitIdentity;
   final Function(bool isServer) onRatioChanged;
   final Function(String ipStr) onIPChanged;
   final Function(String portStr) onPortChanged;
-
-//  在一开始就要进行身份确认
-  final Function() onInitIdentity;
 
   CustomShareScreenDialog(
       {Key? key,
