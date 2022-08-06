@@ -172,8 +172,10 @@ class _CustomDrawBoardAreaState extends State<CustomDrawBoardArea> {
                 return CustomSlider(
                   title: '线条粗细',
                   getSliderValue: (sliderValue) {
-                    print(sliderValue);
+//                    print(sliderValue);
                     cur.nextPenStrokeWidth = sliderValue;
+                    print(cur.nextPenStrokeWidth);
+                    cur.notifyListeners();
                   },
                   curColor: cur.nextPenColor,
                   initData: cur.nextPenStrokeWidth,

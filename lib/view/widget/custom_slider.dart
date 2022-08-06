@@ -9,20 +9,23 @@ class CustomSlider extends StatefulWidget {
   final Color curColor;
   final double initData;
 
-  const CustomSlider(
+  double uiCnt = 1.0;
+
+  CustomSlider(
       {Key? key,
       required this.title,
       required this.getSliderValue,
       required this.curColor,
       required this.initData})
-      : super(key: key);
+      : super(key: key) {
+    uiCnt = initData;
+  }
 
   @override
   _CustomSliderState createState() => _CustomSliderState();
 }
 
 class _CustomSliderState extends State<CustomSlider> {
-  double _cnt = 1.0;
 
   @override
   Widget build(BuildContext context) {
@@ -46,8 +49,8 @@ class _CustomSliderState extends State<CustomSlider> {
           padding: EdgeInsets.only(right: 5),
           decoration:
               BoxDecoration(shape: BoxShape.circle, color: widget.curColor),
-          width: 15,
-          height: 15,
+          width: 15 + widget.uiCnt,
+          height: 15 + widget.uiCnt,
         ),
         title: Text(
           widget.title,
@@ -63,21 +66,30 @@ class _CustomSliderState extends State<CustomSlider> {
 
   Widget sliderKeyPart() {
     return CustomSliderKeyPart(
-        initData: widget.initData,
-        onChangeEnd: (value) {
-          _cnt = value;
+//        initData: widget.initData,
+      initData: widget.uiCnt,
+      onChangeEnd: (value) {
+        setState(() {
+//            _cnt = value;
+
+          widget.uiCnt = value;
         });
+      },
+      activatedColor: widget.curColor,
+      inActivatedColor: Colors.grey[200]!,
+    );
   }
 
   Widget sliderConfirmBtn() {
     return Container(
       padding: EdgeInsets.all(5.0),
       decoration: BoxDecoration(
-          color: Colors.blue,
+//          color: Colors.blue,
+          gradient: LinearGradient(colors: [widget.curColor, Colors.blue]),
           borderRadius: BorderRadius.all(Radius.circular(5.0))),
       child: InkWell(
         onTap: () {
-          widget.getSliderValue(_cnt);
+          widget.getSliderValue(widget.uiCnt);
           Navigator.of(context).pop();
         },
         child: Text(
@@ -93,8 +105,14 @@ class CustomSliderKeyPart extends StatefulWidget {
   final double initData;
   final Function(double sliderValue) onChangeEnd;
   bool _isFirstShown = true;
+  final Color activatedColor;
+  final Color inActivatedColor;
 
-  CustomSliderKeyPart({required this.initData, required this.onChangeEnd});
+  CustomSliderKeyPart(
+      {required this.initData,
+      required this.onChangeEnd,
+      required this.activatedColor,
+      required this.inActivatedColor});
 
   @override
   _CustomSliderKeyPartState createState() => _CustomSliderKeyPartState();
@@ -108,10 +126,12 @@ class _CustomSliderKeyPartState extends State<CustomSliderKeyPart> {
     if (widget._isFirstShown) {
       _cnt = widget.initData;
     }
-    return CupertinoSlider(
-      min: 0,
+    return Slider(
+      min: 1,
       max: 10,
-      divisions: 20,
+      divisions: 200,
+      activeColor: widget.activatedColor,
+      inactiveColor: widget.inActivatedColor,
       onChangeEnd: (value) {
         print(value);
         setState(() {

@@ -70,6 +70,7 @@ class _CustomWatcherScreenState extends State<CustomWatcherScreen> {
 
   FloatingActionButton _buildMagnifierBtn(DrawBoardShareScreenProvider cur) {
     return FloatingActionButton(
+      tooltip: '放大镜',
       backgroundColor:
           cur.isMagnifierOpen ? Colors.primaries[4] : Colors.primaries[4][100],
       onPressed: () {
@@ -86,6 +87,7 @@ class _CustomWatcherScreenState extends State<CustomWatcherScreen> {
     return Visibility(
       visible: cur.isMagnifierOpen,
       child: FloatingActionButton(
+        tooltip: '缩小',
         onPressed: () {
           cur.subScale();
         },
@@ -101,6 +103,7 @@ class _CustomWatcherScreenState extends State<CustomWatcherScreen> {
     return Visibility(
       visible: cur.isMagnifierOpen,
       child: FloatingActionButton(
+        tooltip: '放大',
         onPressed: () {
           cur.addScale();
         },
